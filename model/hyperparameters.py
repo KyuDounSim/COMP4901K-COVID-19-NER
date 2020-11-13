@@ -1,5 +1,6 @@
 """Declare all hyperparameters in this file."""
 
+
 class HP:
     """Hyper parameters"""
     # TODO: Add more parameters to control
@@ -9,14 +10,17 @@ class HP:
     # H = hidden dimension for each encoder
     # A = number of attention heads for each self attention
     # /3 = version number. Most tutorials are using V2, but why not use V3?
-    hub_model_name = 'bert_en_cased_L-12_H-768_A-12/3'
+    model_name = 'cased_L-12_H-768_A-12'
+    hub_model_name = f'bert_en_{model_name}/3'
+    bert_dir = f'pre_bert/{model_name}'
 
     # model related
     # should be one of dense, lstm, crf, softmax, (seq2seq, and others based on
     # our trials)
-    classifier_head_option = 'dense'
-    time_distrib = False
-    bidirectional = True
+    output_layer = 'dense'  # [dense, lstm, gru, seq2seq]
+    output_activation = 'softmax'  # [softmax, crf]
+    time_distrib = False  # used for dense
+    bidirectional = True  # used for lstm
 
     # training related
     epochs = 5
