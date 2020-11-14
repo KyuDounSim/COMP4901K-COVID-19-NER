@@ -137,6 +137,10 @@ def train(model,
                                                   num_train_steps=num_train_steps,
                                                   num_warmup_steps=warmup_steps)
 
+    # NOTE: If using SparseCategoricalCrossentropy, the label should not be
+    # one-hot vector. Not of shape [N, T, C], but [N, T, 1], where each class are
+    # integer values. This is used in the original code, so we should experiment
+    # that also.
     metrics = [tf.keras.metrics.CategoricalAccuracy('accuracy', dtype=tf.float32)]
     loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
