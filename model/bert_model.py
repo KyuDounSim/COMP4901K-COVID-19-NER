@@ -3,6 +3,7 @@
 # TODO: Clean up unused modules
 
 import os
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,16 +59,15 @@ def build_Bert_token_classifier(model_dir,
              input_type_ids=tf.keras.layers.Input(shape=(seq_length, ),
                                                   dtype=tf.int32))
 
-    # TODO: move toward loading from saved checkpoint, for more flexibility.
-    # Also, we might want to use bio-bert: https://github.com/dmis-lab/biobert
-    # hub_encoder = hub.KerasLayer(f'https://tfhub.dev/tensorflow/{model_name}',
-    #                              trainable=True,
-    #                              name='BERT')
-    # h = hub_encoder(x, training=True)
+    bert_config_path = os.path.join(model_dir, "bert_config.json")
+    with open(bert_config_path, 'r') as bert_config_file:
+        config_dict = json.loads(bert_config_file.read())
+
+    bert_config = bert.configs.BertConfig.from_dict(config_dict)
     bert_encoder = bert.bert_models.get_transformer_encoder(
-        os.path.join(model_dir, "bert_config.json"))
-    h = bert_encoder(x, training=True)
-    h = h['sequence_output']  # [N, T, 768]
+        bert_config,
+        sequence_length=seq_length)
+    h = bert_encoder(x, training=True)[0]  # [N, T, 768]
 
     # NOTE: Moving toward BioBert, which do not mask the invalid tokens
     # # valid_ids
