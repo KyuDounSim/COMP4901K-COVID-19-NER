@@ -31,7 +31,6 @@ import tensorflow as tf
 def build_Bert_token_classifier(model_dir,
                                 output_size,
                                 output_layer,
-                                output_activation,
                                 time_distrib=False,
                                 bidirectional=True,
                                 seq_length=None,
@@ -52,21 +51,17 @@ def build_Bert_token_classifier(model_dir,
 
     The model is a keras model.
     """
-    x = dict(input_word_ids=tf.keras.layers.Input(shape=(seq_length, ),
-                                                  dtype=tf.int32),
-             input_mask=tf.keras.layers.Input(shape=(seq_length, ),
-                                              dtype=tf.int32),
-             input_type_ids=tf.keras.layers.Input(shape=(seq_length, ),
-                                                  dtype=tf.int32))
+    x = dict(input_word_ids=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32),
+             input_mask=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32),
+             input_type_ids=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32))
 
     bert_config_path = os.path.join(model_dir, "bert_config.json")
     with open(bert_config_path, 'r') as bert_config_file:
         config_dict = json.loads(bert_config_file.read())
 
     bert_config = bert.configs.BertConfig.from_dict(config_dict)
-    bert_encoder = bert.bert_models.get_transformer_encoder(
-        bert_config,
-        sequence_length=seq_length)
+    bert_encoder = bert.bert_models.get_transformer_encoder(bert_config,
+                                                            sequence_length=seq_length)
     h = bert_encoder(x, training=True)[0]  # [N, T, 768]
 
     # NOTE: Moving toward BioBert, which do not mask the invalid tokens
@@ -91,7 +86,7 @@ def build_Bert_token_classifier(model_dir,
     if output_layer == 'dense':
         classifier = tf.keras.layers.Dense(
             output_size,
-            activation=output_activation,
+            activation=None,
             kernel_initializer=tf.keras.initializers.he_normal(seed=0),
             bias_initializer='zeros')
         if time_distrib:
@@ -113,10 +108,12 @@ def build_Bert_token_classifier(model_dir,
 
     model = tf.keras.models.Model(x, y)
 
-    return model
+    return model, bert_encoder
 
 
 def train(model,
+          bert_encoder,
+          model_dir,
           train_data,
           train_target,
           val_data,
@@ -131,15 +128,17 @@ def train(model,
     num_train_steps = steps_per_epoch * epochs
     warmup_steps = int(epochs * train_data_size * 0.1 / batch_size)
 
-    # creates an optimizer with learning rate schedule
-    optimizer = nlp.optimization.create_optimizer(
-        lr, num_train_steps=num_train_steps, num_warmup_steps=warmup_steps)
+    # Load from pre-trained checkpoint
+    checkpoint = tf.train.Checkpoint(model=bert_encoder)
+    checkpoint.restore(os.path.join(model_dir, 'bert_model.ckpt')).assert_consumed()
 
-    metrics = [
-        tf.keras.metrics.SparseCategoricalAccuracy('accuracy',
-                                                   dtype=tf.float32)
-    ]
-    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    # creates an optimizer with learning rate schedule
+    optimizer = nlp.optimization.create_optimizer(lr,
+                                                  num_train_steps=num_train_steps,
+                                                  num_warmup_steps=warmup_steps)
+
+    metrics = [tf.keras.metrics.CategoricalAccuracy('accuracy', dtype=tf.float32)]
+    loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
 
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 

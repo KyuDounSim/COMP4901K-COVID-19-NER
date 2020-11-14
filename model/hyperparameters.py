@@ -12,7 +12,7 @@ class HP:
     # /3 = version number. Most tutorials are using V2, but why not use V3?
     model_name = 'cased_L-12_H-768_A-12'
     hub_model_name = f'bert_en_{model_name}/3'
-    bert_dir = f'pre_bert/{model_name}'
+    bert_dir = f'pre_bert/tf2_{model_name}'
     data_dir = 'data'
     # model related
     # should be one of dense, lstm, crf, softmax, (seq2seq, and others based on
@@ -23,7 +23,7 @@ class HP:
     bidirectional = True  # used for lstm
 
     # training related
-    epochs = 5
+    epochs = 3
     batch_size = 32
     eval_batch_size = 32
     dropout_rate = 0.1

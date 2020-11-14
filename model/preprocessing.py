@@ -40,7 +40,6 @@ class DataLoader():
         self.val_dict = val_dict
         self.test_dict = test_dict
 
-
     def set_tags(self):
         tags = set(chain(*self.train_dict['tag_seq']))
         self.tag2id['_t_pad_'] = 0
@@ -55,13 +54,12 @@ class DataLoader():
 
         print(self.tag2id)
 
-
     def convert_examples_to_features(self,
-                                    word_seq,
-                                    tag_seq,
-                                    max_seq_length,
-                                    tokenizer,
-                                    print_ex=0):
+                                     word_seq,
+                                     tag_seq,
+                                     max_seq_length,
+                                     tokenizer,
+                                     print_ex=0):
         """Loads a data file into a list of `InputBatch`s.
 
         This function is forked from:
@@ -182,7 +180,6 @@ class DataLoader():
 
         return inp, target
 
-
     def get_train_data(self, print_ex=0):
         self.load_data()
         self.set_tags()
@@ -192,12 +189,16 @@ class DataLoader():
                                                     do_lower_case=False)
 
         train_inp, train_target = self.convert_examples_to_features(
-            self.train_dict['word_seq'], self.train_dict['tag_seq'], self.max_seq_len,
-            tokenizer, print_ex=print_ex)
+            self.train_dict['word_seq'],
+            self.train_dict['tag_seq'],
+            self.max_seq_len,
+            tokenizer,
+            print_ex=print_ex)
 
         val_inp, val_target = self.convert_examples_to_features(self.val_dict['word_seq'],
-                                                        self.val_dict['tag_seq'],
-                                                        self.max_seq_len,
-                                                        tokenizer, print_ex=print_ex)
+                                                                self.val_dict['tag_seq'],
+                                                                self.max_seq_len,
+                                                                tokenizer,
+                                                                print_ex=print_ex)
 
         return train_inp, train_target, val_inp, val_target
