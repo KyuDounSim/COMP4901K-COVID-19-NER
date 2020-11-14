@@ -86,7 +86,7 @@ def build_Bert_token_classifier(model_dir,
     if output_layer == 'dense':
         classifier = tf.keras.layers.Dense(
             output_size,
-            activation=None,
+            activation=None,  # the activation is None, since the loss is from_logits
             kernel_initializer=tf.keras.initializers.he_normal(seed=0),
             bias_initializer='zeros')
         if time_distrib:
