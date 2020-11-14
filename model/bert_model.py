@@ -24,10 +24,10 @@ import official.nlp.modeling.networks
 
 import tensorflow as tf
 
-import tensorflow_hub as hub
+# import tensorflow_hub as hub
 
 
-def build_Bert_token_classifier(model_name,
+def build_Bert_token_classifier(model_dir,
                                 output_size,
                                 output_layer,
                                 output_activation,
@@ -60,10 +60,13 @@ def build_Bert_token_classifier(model_name,
 
     # TODO: move toward loading from saved checkpoint, for more flexibility.
     # Also, we might want to use bio-bert: https://github.com/dmis-lab/biobert
-    hub_encoder = hub.KerasLayer(f'https://tfhub.dev/tensorflow/{model_name}',
-                                 trainable=True,
-                                 name='BERT')
-    h = hub_encoder(x, training=True)
+    # hub_encoder = hub.KerasLayer(f'https://tfhub.dev/tensorflow/{model_name}',
+    #                              trainable=True,
+    #                              name='BERT')
+    # h = hub_encoder(x, training=True)
+    bert_encoder = bert.bert_models.get_transformer_encoder(
+        os.path.join(model_dir, "bert_config.json"))
+    h = bert_encoder(x, training=True)
     h = h['sequence_output']  # [N, T, 768]
 
     # NOTE: Moving toward BioBert, which do not mask the invalid tokens

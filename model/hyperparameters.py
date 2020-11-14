@@ -13,7 +13,7 @@ class HP:
     model_name = 'cased_L-12_H-768_A-12'
     hub_model_name = f'bert_en_{model_name}/3'
     bert_dir = f'pre_bert/{model_name}'
-
+    data_dir = 'data'
     # model related
     # should be one of dense, lstm, crf, softmax, (seq2seq, and others based on
     # our trials)
