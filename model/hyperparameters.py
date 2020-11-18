@@ -10,7 +10,7 @@ class HP:
     # H = hidden dimension for each encoder
     # A = number of attention heads for each self attention
     # /3 = version number. Most tutorials are using V2, but why not use V3?
-    model_name = 'cased_L-12_H-768_A-12'
+    model_name = 'cased_L-12_H-768_A-12'  # or biobert
     hub_model_name = f'bert_en_{model_name}/3'
     bert_dir = f'pre_bert/tf2_{model_name}'
     data_dir = 'data'
