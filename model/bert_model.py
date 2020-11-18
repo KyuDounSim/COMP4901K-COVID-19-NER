@@ -55,7 +55,7 @@ def build_Bert_token_classifier(model_dir,
              input_mask=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32),
              input_type_ids=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32))
 
-    bert_config_path = os.path.join(model_dir, "bert_config.json")
+    bert_config_path = os.path.join(model_dir, 'bert_config.json')
     with open(bert_config_path, 'r') as bert_config_file:
         config_dict = json.loads(bert_config_file.read())
 
@@ -155,4 +155,18 @@ def train(model,
     return model, history
 
 
-#TODO: predict code
+def evaluate(model, inp, target):
+    output = model.predict(inp, batch_size=64)
+    softmax_o = tf.keras.activations.softmax(output)
+
+    pred = softmax_o.argmax(-1)
+    targ = target['label_ids'].argmax(-1)
+
+    p_f = pred.flatten()
+    t_f = targ.flatten()
+
+    non_inv_idx = np.where(target['label_mask'].flatten())[0]
+    return np.sum(p_f[non_inv_idx] == t_f[non_inv_idx]) / len(non_inv_idx)
+
+
+# TODO: Prediction code for test data

@@ -59,6 +59,7 @@ class DataLoader():
                                      tag_seq,
                                      max_seq_length,
                                      tokenizer,
+                                     use_invalid=True,
                                      print_ex=0):
         """Loads a data file into a list of `InputBatch`s.
 
@@ -77,7 +78,6 @@ class DataLoader():
             'input_word_ids': [],
             'input_mask': [],
             'input_type_ids': [],
-            # 'valid_ids': [],
         }
         target = {
             'label_ids': [],
@@ -88,72 +88,63 @@ class DataLoader():
             labellist = tag_seq[ex_index]
             tokens = []
             labels = []
-            # valid_ids = []
             label_mask = []
             for i, word in enumerate(textlist):
                 label_1 = labellist[i]
                 if word == '_unk_':
                     tokens.append('[UNK]')
                     labels.append(label_1)
-                    # valid_ids.append(1)
                     label_mask.append(True)
                     continue
                 elif word == '_w_pad_':
                     tokens.append('[PAD]')
                     labels.append(label_1)
-                    # valid_ids.append(1)
-                    label_mask.append(True)
+                    label_mask.append(False)
                     continue
                 token = tokenizer.tokenize(word)
                 tokens.extend(token)
                 for m in range(len(token)):
                     if m == 0:
                         labels.append(label_1)
-                        # valid_ids.append(1)
                         label_mask.append(True)
                     else:
-                        # valid_ids.append(0)
-                        labels.append('[INV]')
+                        if use_invalid:
+                            labels.append('[INV]')
+                        else:
+                            labels.append(label_1)
                         label_mask.append(False)
             if len(tokens) >= max_seq_length - 1:
                 tokens = tokens[0:(max_seq_length - 2)]
                 labels = labels[0:(max_seq_length - 2)]
-                # valid_ids = valid_ids[0:(max_seq_length - 2)]
                 label_mask = label_mask[0:(max_seq_length - 2)]
             ntokens = []
             segment_ids = []
             label_ids = []
             ntokens.append('[CLS]')
             segment_ids.append(0)
-            # valid_ids.insert(0, 1)
-            label_mask.insert(0, True)
+            label_mask.insert(0, False)
             label_ids.append(self.tag2id['[CLS]'])
             for i, token in enumerate(tokens):
                 ntokens.append(token)
                 segment_ids.append(0)
-                if len(labels) > i:
-                    label_ids.append(self.tag2id[labels[i]])
+                label_ids.append(self.tag2id[labels[i]])
             ntokens.append('[SEP]')
             segment_ids.append(0)
-            # valid_ids.append(1)
-            label_mask.append(True)
+            label_mask.append(False)
             label_ids.append(self.tag2id['[SEP]'])
             input_ids = tokenizer.convert_tokens_to_ids(ntokens)
             input_mask = [1] * len(input_ids)
-            # label_mask = [True] * len(label_ids)
             while len(input_ids) < max_seq_length:
                 input_ids.append(0)
                 input_mask.append(0)
                 segment_ids.append(0)
                 label_ids.append(0)
-                # valid_ids.append(1)
                 label_mask.append(False)
 
             assert len(input_ids) == max_seq_length
             assert len(input_mask) == max_seq_length
             assert len(segment_ids) == max_seq_length
             assert len(label_ids) == max_seq_length
-            # assert len(valid_ids) == max_seq_length
             assert len(label_mask) == max_seq_length
 
             if ex_index < print_ex:
@@ -167,20 +158,18 @@ class DataLoader():
             inp['input_word_ids'].append(input_ids)
             inp['input_mask'].append(input_mask)
             inp['input_type_ids'].append(segment_ids)
-            # inp['valid_ids'].append(valid_ids)
 
             target['label_ids'].append(label_ids)
             target['label_mask'].append(label_mask)
 
         inp = {k: np.array(v) for k, v in inp.items()}
-        target = {
-            k: to_categorical(np.array(v), num_classes=len(self.tag2id))
-            for k, v in target.items()
-        }
+        target['label_ids'] = to_categorical(np.array(target['label_ids']),
+                                             num_classes=len(self.tag2id))
+        target['label_mask'] = np.array(target['label_mask'])
 
         return inp, target
 
-    def get_train_data(self, print_ex=0):
+    def get_train_data(self, use_invalid=True, print_ex=0):
         self.load_data()
         self.set_tags()
 
@@ -199,6 +188,7 @@ class DataLoader():
                                                                 self.val_dict['tag_seq'],
                                                                 self.max_seq_len,
                                                                 tokenizer,
+                                                                use_invalid=use_invalid,
                                                                 print_ex=print_ex)
 
         return train_inp, train_target, val_inp, val_target
