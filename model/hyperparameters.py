@@ -9,7 +9,7 @@ class HP:
     # L = number of tranformer_encoder layer
     # H = hidden dimension for each encoder
     # A = number of attention heads for each self attention
-    model_name = 'biobert'  # ['cased_L-12_H-768_A-12', biobert]
+    model_name = 'biobert_large'  # ['cased_L-12_H-768_A-12', biobert]
     bert_dir = f'pre_bert/tf2_{model_name}'
     data_dir = 'data'
     # model related
@@ -22,8 +22,8 @@ class HP:
 
     # training related
     epochs = 5
-    batch_size = 32
-    eval_batch_size = 32
+    batch_size = 16
+    eval_batch_size = 64
     dropout_rate = 0.1
     learning_rate = 2e-5
 

@@ -62,7 +62,7 @@ def build_Bert_token_classifier(model_dir,
     bert_config = bert.configs.BertConfig.from_dict(config_dict)
     bert_encoder = bert.bert_models.get_transformer_encoder(bert_config,
                                                             sequence_length=seq_length)
-    h = bert_encoder(x, training=True)[0]  # [N, T, 768]
+    h = bert_encoder(x, training=False)[0]  # [N, T, 768]
 
     # NOTE: Moving toward BioBert, which do not mask the invalid tokens
     # # valid_ids
@@ -157,7 +157,7 @@ def train(model,
 
 def evaluate(model, inp, target):
     output = model.predict(inp, batch_size=64)
-    softmax_o = tf.keras.activations.softmax(output)
+    softmax_o = tf.keras.layers.Softmax()(output).numpy()
 
     pred = softmax_o.argmax(-1)
     targ = target['label_ids'].argmax(-1)
