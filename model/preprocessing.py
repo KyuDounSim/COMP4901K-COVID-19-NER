@@ -74,9 +74,9 @@ class DataLoader():
         # evaluate code anyway.
 
         inp = {
-            'input_ids': [],
+            'input_word_ids': [],
             'input_mask': [],
-            'segment_ids': [],
+            'input_type_ids': [],
             # 'valid_ids': [],
         }
         target = {
@@ -164,9 +164,9 @@ class DataLoader():
                 print('segment_ids: %s' % ' '.join([str(x) for x in segment_ids]))
                 print('label_ids: %s' % ' '.join([str(x) for x in label_ids]))
 
-            inp['input_ids'].append(input_ids)
+            inp['input_word_ids'].append(input_ids)
             inp['input_mask'].append(input_mask)
-            inp['segment_ids'].append(segment_ids)
+            inp['input_type_ids'].append(segment_ids)
             # inp['valid_ids'].append(valid_ids)
 
             target['label_ids'].append(label_ids)
