@@ -190,4 +190,33 @@ def evaluate(model, inp, target, mask, tag2id, targ_seq_len=128):
     return np.sum(p_f[non_inv_idx] == t_f[non_inv_idx]) / len(non_inv_idx)
 
 
-# TODO: Prediction code for test data
+def predict(model, inp, mask, id2tag, targ_seq_len=128):
+    """prediction code.
+
+    args:
+        model: trained model. Keras model.
+        inp: input to evaluate on (preprocessed). Numpy Array.
+        target: target to evaluate on (non-preprocessed raw target). Python List.
+        mask: label mask: applied on predicted output. Numpy array.
+        id2tag: A Python dictionary that maps the pred id to string tag.
+        targ_seq_len: original sequence length of original dataset. 128
+    """
+    output = model.predict(inp, batch_size=64)  # [N, max_seq_len, 68]
+    softmax_o = tf.keras.layers.Softmax()(output)  # [N, max_seq_len]
+
+    raw_pred = tf.argmax(softmax_o, axis=-1)  # [N, max_seq_len]
+    pred_masked = tf.ragged.boolean_mask(raw_pred,
+                                         mask).to_tensor(default_value=0).numpy()
+
+    if pred_masked.shape[1] < targ_seq_len:
+        # [N, targ_seq_len]
+        pred = np.pad(pred_masked, [[0, 0], [0, targ_seq_len - pred_masked.shape[1]]])
+
+    # pred
+    pred_tag = [[id2tag[tag] for tag in ex] for ex in pred.tolist()]  # [N, targ_seq_len]
+    df = pd.DataFrame({
+        'id': np.arange(len(pred_tag)),
+        'labels': [json.dumps(preds) for preds in pred_tag]
+    })
+    df.to_csv('test_preds.csv', index=False)
+    return pred_tag
