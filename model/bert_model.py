@@ -185,11 +185,11 @@ def evaluate(model, inp, target, mask, tag2id, targ_seq_len=128):
     p_f = pred.flatten()
     t_f = targ.flatten()
 
-    non_inv_idx = np.where(targ != tag2id["_t_pad_"])[0]
-    return np.sum(p_f[non_inv_idx] == t_f[non_inv_idx]) / len(non_inv_idx)
+    non_inv_idx = np.where(t_f != tag2id["_t_pad_"])[0]
+    return sum(p_f[non_inv_idx] == t_f[non_inv_idx]) / len(non_inv_idx)
 
 
-def predict(model, inp, mask, id2tag, targ_seq_len=128):
+def predict(model, inp, mask, id2tag, fname='test_preds.csv', targ_seq_len=128):
     """prediction code.
 
     args:
@@ -216,5 +216,5 @@ def predict(model, inp, mask, id2tag, targ_seq_len=128):
         'id': np.arange(len(pred_tag)),
         'labels': [json.dumps(preds) for preds in pred_tag]
     })
-    df.to_csv('test_preds.csv', index=False)
+    df.to_csv(fname, index=False)
     return pred_tag
