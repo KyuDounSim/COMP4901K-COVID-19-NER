@@ -22,10 +22,11 @@ class HP:
 
     # training related
     epochs = 5
-    batch_size = 16
+    batch_size = 8
     eval_batch_size = 64
     dropout_rate = 0.1
     learning_rate = 2e-5
 
     # dataset related
-    max_seq_len = 128  # to be decided later with the dataset
+    max_seq_len = 256  # to be decided later with the dataset
+    targ_seq_len = 128  # original max seq length of dataset: they are all paddedto 128
