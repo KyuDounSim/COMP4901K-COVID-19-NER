@@ -59,7 +59,7 @@ class DataLoader():
                                      tag_seq,
                                      max_seq_length,
                                      tokenizer,
-                                     use_invalid=True,
+                                     use_max_seq=True,
                                      print_ex=0):
         """Loads a data file into a list of `InputBatch`s.
 
@@ -73,6 +73,9 @@ class DataLoader():
         # TODO: deal with the _w_pad_ tokens and _t_pad_ tags. Might wanna just
         # delete all of them. It is okay to delete them since they are filtered in
         # evaluate code anyway.
+
+        if tag_seq is None:  # test dict
+            tag_seq = [['_t_pad_' for _ in ex] for ex in word_seq]
 
         inp = {
             'input_word_ids': [],
@@ -97,9 +100,6 @@ class DataLoader():
                     label_mask.append(True)
                     continue
                 elif word == '_w_pad_':
-                    tokens.append('[PAD]')
-                    labels.append(label_1)
-                    label_mask.append(False)
                     continue
                 token = tokenizer.tokenize(word)
                 tokens.extend(token)
@@ -108,12 +108,9 @@ class DataLoader():
                         labels.append(label_1)
                         label_mask.append(True)
                     else:
-                        if use_invalid:
-                            labels.append('[INV]')
-                        else:
-                            labels.append(label_1)
+                        labels.append('[INV]')
                         label_mask.append(False)
-            if len(tokens) >= max_seq_length - 1:
+            if use_max_seq and len(tokens) >= max_seq_length - 1:
                 tokens = tokens[0:(max_seq_length - 2)]
                 labels = labels[0:(max_seq_length - 2)]
                 label_mask = label_mask[0:(max_seq_length - 2)]
@@ -134,18 +131,19 @@ class DataLoader():
             label_ids.append(self.tag2id['[SEP]'])
             input_ids = tokenizer.convert_tokens_to_ids(ntokens)
             input_mask = [1] * len(input_ids)
-            while len(input_ids) < max_seq_length:
-                input_ids.append(0)
-                input_mask.append(0)
-                segment_ids.append(0)
-                label_ids.append(0)
-                label_mask.append(False)
+            if use_max_seq:
+                while len(input_ids) < max_seq_length:
+                    input_ids.append(0)
+                    input_mask.append(0)
+                    segment_ids.append(0)
+                    label_ids.append(0)
+                    label_mask.append(False)
 
-            assert len(input_ids) == max_seq_length
-            assert len(input_mask) == max_seq_length
-            assert len(segment_ids) == max_seq_length
-            assert len(label_ids) == max_seq_length
-            assert len(label_mask) == max_seq_length
+                assert len(input_ids) == max_seq_length
+                assert len(input_mask) == max_seq_length
+                assert len(segment_ids) == max_seq_length
+                assert len(label_ids) == max_seq_length
+                assert len(label_mask) == max_seq_length
 
             if ex_index < print_ex:
                 print('*** Example ***')
@@ -162,14 +160,15 @@ class DataLoader():
             target['label_ids'].append(label_ids)
             target['label_mask'].append(label_mask)
 
-        inp = {k: np.array(v) for k, v in inp.items()}
-        target['label_ids'] = to_categorical(np.array(target['label_ids']),
-                                             num_classes=len(self.tag2id))
-        target['label_mask'] = np.array(target['label_mask'])
+        if use_max_seq:
+            inp = {k: np.array(v) for k, v in inp.items()}
+            target['label_ids'] = to_categorical(np.array(target['label_ids']),
+                                                 num_classes=len(self.tag2id))
+            target['label_mask'] = np.array(target['label_mask'])
 
         return inp, target
 
-    def get_train_data(self, use_invalid=True, print_ex=0):
+    def get_train_data(self, use_max_seq=True, print_ex=0):
         self.load_data()
         self.set_tags()
 
@@ -182,13 +181,32 @@ class DataLoader():
             self.train_dict['tag_seq'],
             self.max_seq_len,
             tokenizer,
+            use_max_seq=use_max_seq,
             print_ex=print_ex)
 
         val_inp, val_target = self.convert_examples_to_features(self.val_dict['word_seq'],
                                                                 self.val_dict['tag_seq'],
                                                                 self.max_seq_len,
                                                                 tokenizer,
-                                                                use_invalid=use_invalid,
+                                                                use_max_seq=use_max_seq,
                                                                 print_ex=print_ex)
 
         return train_inp, train_target, val_inp, val_target
+
+    def get_test_data(self, use_max_seq=True, print_ex=0):
+        self.load_data()
+        self.set_tags()
+
+        tokenizer = bert.tokenization.FullTokenizer(vocab_file=os.path.join(
+            self.bert_dir, 'vocab.txt'),
+                                                    do_lower_case=False)
+
+        train_inp, train_target = self.convert_examples_to_features(
+            self.test_dict['word_seq'],
+            None,
+            self.max_seq_len,
+            tokenizer,
+            use_max_seq=use_max_seq,
+            print_ex=print_ex)
+
+        return train_inp, train_target
