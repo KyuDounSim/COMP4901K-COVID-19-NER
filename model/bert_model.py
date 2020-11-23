@@ -172,12 +172,11 @@ def evaluate(model, inp, target, mask, tag2id, targ_seq_len=128):
 
     raw_pred = tf.argmax(softmax_o, axis=-1)  # [N, max_seq_len]
 
-    pred_masked = tf.ragged.boolean_mask(raw_pred,
-                                         mask).to_tensor(default_value=0).numpy()
+    pred = tf.ragged.boolean_mask(raw_pred, mask).to_tensor(default_value=0).numpy()
 
-    if pred_masked.shape[1] < targ_seq_len:
+    if pred.shape[1] < targ_seq_len:
         # [N, targ_seq_len]
-        pred = np.pad(pred_masked, [[0, 0], [0, targ_seq_len - pred_masked.shape[1]]])
+        pred = np.pad(pred, [[0, 0], [0, targ_seq_len - pred.shape[1]]])
 
     # target tag -> integer
     targ = np.array([[tag2id[tag] for tag in ex] for ex in target])  # [N, targ_seq_len]
@@ -205,12 +204,11 @@ def predict(model, inp, mask, id2tag, targ_seq_len=128):
     softmax_o = tf.keras.layers.Softmax()(output)  # [N, max_seq_len]
 
     raw_pred = tf.argmax(softmax_o, axis=-1)  # [N, max_seq_len]
-    pred_masked = tf.ragged.boolean_mask(raw_pred,
-                                         mask).to_tensor(default_value=0).numpy()
+    pred = tf.ragged.boolean_mask(raw_pred, mask).to_tensor(default_value=0).numpy()
 
-    if pred_masked.shape[1] < targ_seq_len:
+    if pred.shape[1] < targ_seq_len:
         # [N, targ_seq_len]
-        pred = np.pad(pred_masked, [[0, 0], [0, targ_seq_len - pred_masked.shape[1]]])
+        pred = np.pad(pred, [[0, 0], [0, targ_seq_len - pred.shape[1]]])
 
     # pred
     pred_tag = [[id2tag[tag] for tag in ex] for ex in pred.tolist()]  # [N, targ_seq_len]
