@@ -93,8 +93,14 @@ def build_Bert_token_classifier(model_dir,
         if time_distrib:
             classifier = tf.keras.layers.TimeDistributed(classifier)
 
-    elif output_layer == 'lstm':
-        raise NotImplementedError
+    elif output_layer == 'bilstm':
+        classifier = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(
+            output_size,
+            activation=None,  # the activation is None, since the loss is from_logits
+            kernel_initializer=tf.keras.initializers.he_normal(seed=0),
+            bias_initializer='zeros', return_sequences= True))
+        if time_distrib:
+            classifier = tf.keras.layers.TimeDistributed(classifier)
 
     elif output_layer == 'gru':
         raise NotImplementedError
