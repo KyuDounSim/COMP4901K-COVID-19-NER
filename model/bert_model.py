@@ -26,8 +26,6 @@ import official.nlp.modeling.networks
 import pandas as pd
 import tensorflow as tf
 
-# import tensorflow_hub as hub
-
 
 def build_Bert_token_classifier(model_dir,
                                 output_size,
@@ -37,20 +35,18 @@ def build_Bert_token_classifier(model_dir,
                                 seq_length=None,
                                 dropout_rate=0.1):
     """
-    Code sources:
+    Code references:
     1. https://github.com/tensorflow/models/blob/master/official/nlp/bert/bert_models.py
-    2. https://tfhub.dev/tensorflow/bert_en_cased_L-12_H-768_A-12/3
-    3. https://www.tensorflow.org/official_models/fine_tuning_bert
-    4. https://github.com/bhuvanakundumani/BERT-NER-TF2/
-    5. https://github.com/dmis-lab/biobert
+    2. https://www.tensorflow.org/official_models/fine_tuning_bert
+    3. https://github.com/bhuvanakundumani/BERT-NER-TF2/
+    4. https://github.com/dmis-lab/biobert
 
     Builds and returns a BERT model with the specified output layer on top.
     The options are:
     # 1. Dense / Time Distributed dense
-    # 2. LSTM / Bi-LSTM / CRF-LSTM / CRF-Bi-LSTM
-    # 3. Seq2Seq, etc.
+    # 2. LSTM / Bi-LSTM / GRU / Bi-GRU
 
-    The model is a keras model.
+    The model is a TF2 keras model.
     """
     x = dict(input_word_ids=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32),
              input_mask=tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32),
@@ -64,23 +60,6 @@ def build_Bert_token_classifier(model_dir,
     bert_encoder = bert.bert_models.get_transformer_encoder(bert_config,
                                                             sequence_length=seq_length)
     h = bert_encoder(x, training=False)[0]  # [N, T, 768]
-
-    # NOTE: Moving toward BioBert, which do not mask the invalid tokens
-    # # valid_ids
-    # v = tf.keras.layers.Input(shape=(seq_length, ), dtype=tf.int32)
-    # mask = tf.cast(v, dtype=tf.bool)
-
-    # def _components(args):
-    #     values, bool_mask = args
-    #     ragged = tf.ragged.boolean_mask(values, bool_mask)
-    #     return ragged
-
-    # masked = tf.keras.layers.Lambda(_components)([h, mask])
-    # zero_at_end = masked.to_tensor(default_value=0)  # [N, num_valid_ids, 768]
-
-    # padded = tf.pad(
-    #   zero_at_end, [[0,0], [0, seq_length - tf.shape(zero_at_end)[1]], [0,0]])
-    # padded = tf.reshape(padded, [-1, seq_length, 768])  # hotfix for None dim.
 
     d_h = tf.keras.layers.Dropout(rate=dropout_rate)(h)
 
@@ -96,30 +75,27 @@ def build_Bert_token_classifier(model_dir,
 
     elif output_layer == 'lstm':
         rnn_classifier = tf.keras.layers.LSTM(
-            		output_size,
-	            activation='tanh',
-            		recurrent_activation = 'sigmoid',
-            		kernel_initializer=tf.keras.initializers.he_normal(seed=0),
-            		bias_initializer='zeros', return_sequences= True)
-        
+            output_size,
+            activation='tanh',
+            recurrent_activation='sigmoid',
+            kernel_initializer=tf.keras.initializers.he_normal(seed=0),
+            bias_initializer='zeros',
+            return_sequences=True)
+
         if bidirectional:
-            rnn_classifer = tf.keras.layers.Bidirectional(rnn_classifer, merge_mode = 'sum')
-           
+            rnn_classifer = tf.keras.layers.Bidirectional(rnn_classifer, merge_mode='sum')
+
         lstm_output = rnn_classifier(d_h)
-        y = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(lstm_output)
+        y = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(output_size))(lstm_output)
         lstm_model = tf.keras.models.Model(x, y)
         return lstm_model, bert_encoder
 
     elif output_layer == 'gru':
         raise NotImplementedError
 
-    elif output_layer == 'seq2seq':
-        raise NotImplementedError
-
     else:
         raise NotImplementedError
-        
-    y = classifer(d_h)
 
     model = tf.keras.models.Model(x, y)
 
@@ -172,6 +148,8 @@ def train(model,
 
 def evaluate(model, inp, target, mask, tag2id, targ_seq_len=128):
     """evaluation code.
+    This returns the same evaluation result with the provided evaluate code:
+    Only difference is that it does not require csv file, just direct input.
 
     args:
         model: trained model. Keras model.
@@ -182,7 +160,7 @@ def evaluate(model, inp, target, mask, tag2id, targ_seq_len=128):
         targ_seq_len: original sequence length of original dataset. 128
     """
     output = model.predict(inp, batch_size=64)  # [N, max_seq_len, 68]
-    softmax_o = tf.keras.layers.Softmax()(output)  # [N, max_seq_len]
+    softmax_o = tf.keras.layers.Softmax()(output)  # [N, max_seq_len, 68]
 
     raw_pred = tf.argmax(softmax_o, axis=-1)  # [N, max_seq_len]
 
