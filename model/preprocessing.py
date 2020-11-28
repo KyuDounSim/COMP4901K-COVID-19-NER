@@ -3,6 +3,21 @@
 BERT requires specific data input types: need to conform to it.
 Also, we need to use the same bert_tokenizer used for the bert model we are
 using.
+
+This is forked and modified from BioBert's Github repo:
+https://github.com/dmis-lab/biobert
+
+Citation:
+@article{10.1093/bioinformatics/btz682,
+    author = {Lee, Jinhyuk and Yoon, Wonjin and Kim, Sungdong and Kim, Donghyeon and Kim, Sunkyu and So, Chan Ho and Kang, Jaewoo},
+    title = "{BioBERT: a pre-trained biomedical language representation model for biomedical text mining}",
+    journal = {Bioinformatics},
+    year = {2019},
+    month = {09},
+    issn = {1367-4803},
+    doi = {10.1093/bioinformatics/btz682},
+    url = {https://doi.org/10.1093/bioinformatics/btz682},
+}
 """
 
 from itertools import chain
