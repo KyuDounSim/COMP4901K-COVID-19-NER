@@ -103,7 +103,7 @@ def build_Bert_token_classifier(model_dir,
             		bias_initializer='zeros', return_sequences= True)
         
         if bidirectional:
-            rnn_classifer = tf.keras.layers.Bidirectional(rnn_classifer, merge_mode = 'sum')
+            rnn_classifier = tf.keras.layers.Bidirectional(rnn_classifier, merge_mode = 'sum')
            
         lstm_output = rnn_classifier(d_h)
         y = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(lstm_output)
