@@ -87,23 +87,24 @@ def build_Bert_token_classifier(model_dir,
 
         lstm_output = rnn_classifier(d_h)
         y = tf.keras.layers.TimeDistributed(
-            tf.keras.layers.Dense(output_size))(lstm_output)
-        lstm_model = tf.keras.models.Model(x, y)
-        return lstm_model, bert_encoder
+            tf.keras.layers.Dense(output_size, activation=None))(lstm_output)
 
     elif output_layer == 'gru':
         classifier = tf.keras.layers.GRU(
             output_size,
-            activation=None,  # the activation is None, since the loss is from_logits
+            activation='tanh',
             kernel_initializer=tf.keras.initializers.he_normal(seed=0),
-            bias_initializer='zeros', return_sequences= True)
-          
+            bias_initializer='zeros',
+            return_sequences=True)
+
         if bidirectional:
-            classifier = tf.keras.layers.Bidirectional(classifier, merge_mode='sum', weights=None, backward_layer=None)
+            classifier = tf.keras.layers.Bidirectional(classifier,
+                                                       merge_mode='sum',
+                                                       weights=None,
+                                                       backward_layer=None)
         gru_output = classifier(d_h)
-        y = tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(output_size))(gru_output)
-        model = tf.keras.models.Model(x, y)
-        return model, bert_encoder
+        y = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(output_size, activation=None))(gru_output)
 
     else:
         raise NotImplementedError
